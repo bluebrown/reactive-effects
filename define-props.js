@@ -121,11 +121,3 @@ export function createApp(app) {
 
   return shim
 }
-
-
-let x = 5
-
-export const inc = () => {
-  x++
-  return x
-}

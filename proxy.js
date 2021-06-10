@@ -1,58 +1,58 @@
 'use strict'
 
-import { render } from 'https://unpkg.com/lit-html@1.4.1/lit-html.js'
-export { html } from 'https://unpkg.com/lit-html@1.4.1/lit-html.js'
+import { render } from 'https://unpkg.com/lit-html@latest/lit-html.js'
+export { html } from 'https://unpkg.com/lit-html@latest/lit-html.js'
 
-function isO(value) {
-  return value !== null
-    && typeof value === 'object'
-}
 
-function isA(value) {
-  return Array.isArray(value)
-}
-
+// Maintain a stack of running effects
 const runningEffects = []
-const targets = new Map()
 
-function track(target, prop) {
-  const subscribedEffects = targets.get(target) || {} 
-  
-  if (!subscribedEffects[prop]) {
-    subscribedEffects[prop] = new Set()
+// Maintain map of targets and subscribers
+const subscribedEffects = new Map()
+
+export const createEffect = fn => {
+  // Wrap the passed fn in an effect function
+  const effect = () => {
+    runningEffects.push(effect)
+    fn()
+    runningEffects.pop()
   }
 
-  for (const effect of runningEffects) {
-    subscribedEffects[prop].add(effect)
-  }
-
-  targets.set(target, subscribedEffects)
-
+  // Automatically run the effect immediately
+  effect()
 }
 
-let draw = null
-function trigger(target, prop) {
-  const subscribedEffects = targets.get(target) || {}
-  if (!subscribedEffects[prop]) return
-  
-  clearTimeout(draw)
-  draw = setTimeout(() => {
-    for (const effect of subscribedEffects[prop]) {
-      effect()
+// handle proxy trap callbacks
+function track(target, prop, value) {
+  let subs = subscribedEffects.get(target) || {}
+  if (!subs[prop]) subs[prop] = new Set()
+  for (const fn of runningEffects) {
+    subs[prop].add(fn)
+  }
+  subscribedEffects.set(target, subs)
+}
+
+let nextTick = null
+function trigger(target, prop, value) {
+  let subs = subscribedEffects.get(target) || {}
+  if (!subs[prop]) return
+  // debounce update triggers until next tick
+  clearTimeout(nextTick)
+  nextTick = setTimeout(() => {
+    for (const fn of subs[prop]) {
+      fn()
     }
   }, 0)
-
 }
 
+// handle object access
 const handler = {
   get(target, prop) {
     const value = Reflect.get(...arguments)
-    if (isO(value)) {
-      return reactive(value)
-    } else {
-      track(target, prop, value)
-      return value
-    }
+    track(target, prop, value)
+    return value !== null && typeof value === 'object'
+      ? reactive(value)
+      : value;
   },
   set(target, prop) {
     const ok = Reflect.set(...arguments)
@@ -61,28 +61,17 @@ const handler = {
   }
 }
 
-export function reactive(data) {
-  return new Proxy(data, handler)
+// create reactive proxy object
+export function reactive(value) {
+  return new Proxy(value, handler)
 }
 
-export const createEffect = fn => {
-  const effect = async () => {
-    runningEffects.push(effect)
-    await fn()
-    runningEffects.pop()
-  }
-  effect().catch(console.warn)
-}
 
-export function createApp(options) {
-  const proxy = options.setup()
-  function mount(template, context) {
-    createEffect(() => {
-      render(template.call(proxy), context)
-    })
-  }
-
+export function createApp(opts) {
+  const proxy = opts.setup()
   return {
-    mount
+    mount: (template, context) => {
+      createEffect(() => render(template.call(proxy), context))
+    }
   }
 }

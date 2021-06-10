@@ -1,6 +1,5 @@
 'use strict'
-
-import { html } from './lib.js'
+import { html } from 'https://unpkg.com/lit-html@latest/lit-html.js'
 
 export const app = {
   get template() {
