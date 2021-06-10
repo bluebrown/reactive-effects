@@ -1,84 +1,36 @@
 'use strict'
-import { render, html } from './lib.js'
 
-render({
+import {reactive, createApp, createEffect, html} from './proxy'
 
-  data () {
-    return {
-      count: 0,
-      title: 'Wue',
-      todos: [],
-      variants: [
-        'black',
-        'white',
-        'primary',
-        'link',
-        'info',
-        'success',
-        'warning',
-        'danger'
-      ]
-    }
-  },
 
-  created () {
-    this.fetchTodos(10)
-  },
+// track how many times render is actually called
+let renderCounter = 0
 
-  methods: {
-    fetchTodos (amount = 5) {
-      fetch('https://jsonplaceholder.typicode.com/todos?_limit=' + amount)
-        .then(response => response.json())
-        .then((json) => {
-          this.todos = json.map((todo) => {
-            todo.variant = this.randomItem(this.variants)
-            return todo
-          })
-        }
-        )
-        .catch(console.warn)
-    },
-    filterTodos (id) {
-      this.todos = this.todos
-        .filter(todo => todo.id !== id)
-    },
-    randomItem (items) {
-      return items[Math.floor(Math.random() * items.length)]
-    }
+createApp({
+  setup() {
 
-  },
+    const state = reactive({ a: 1, b: 2, deep: { a: 5 } })
 
-  watch: {
-    todos (newVal, oldVal) {
-      if (newVal.length < 1) {
-        this.fetchTodos()
-      }
-    }
-  },
+    createEffect(() => {
+      console.log('watch a', state.a)
+    })
 
-  get template () {
-    return html`
-      <div class="container p-5 has-text-centered">
-        <h1 class="title">${this.title}</h1>
-        <button 
-          class="button is-primary" 
-          @click=${() => this.count++}
-        >
-          You clicked ${this.count} times!
-        </button>
-        <hr>
-        <ul>
-          ${this.todos.map(({ id, title, variant }) => html`
-          <li class="mb-2">
-          <span class="tag is-${variant} is-light">
-            ${title}
-            <button class="delete is-small"  
-              @click="${() => this.filterTodos(id)}"></button>
-          </span>
-          </li>
-        `)}
-        </ul>
-      </div>
-    `
+    createEffect(() => {
+      console.log('watch b', state.b)
+    })
+
+    createEffect(() => {
+      console.log('watch deep a', state.deep.a)
+    })
+
+    return state
   }
-}, document.getElementById('app'))
+}).mount(function template() {
+    renderCounter++
+    return html`
+      <code>Render Count: ${renderCounter}</code>
+      <button class="button" @click="${() => this.a++}">${this.a}</button>
+      <button class="button" @click="${() => this.b++}">${this.b}</button>
+      <button class="button" @click="${() => this.deep.a++}">${this.deep.a}</button>
+  `
+}, document.body)
