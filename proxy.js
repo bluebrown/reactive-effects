@@ -8,8 +8,16 @@ export { html } from 'https://unpkg.com/lit-html@latest/lit-html.js'
 const runningEffects = []
 
 // Maintain map of targets and subscribers
-const subscribedEffects = new Map()
+const subscribedEffects = new WeakMap()
 
+// Maintain a set of effects that should 
+// get run on the next tick
+const scheduledEffects = new Set()
+
+
+// put the effect on the stack while running
+// so that the proxy knows which effect
+// has used the getter/setter
 export const createEffect = fn => {
   // Wrap the passed fn in an effect function
   const effect = () => {
@@ -22,30 +30,29 @@ export const createEffect = fn => {
   effect()
 }
 
-// handle proxy trap callbacks
+// Handle tracked getter access
 function track(target, prop, value) {
   let subs = subscribedEffects.get(target) || {}
   if (!subs[prop]) subs[prop] = new Set()
-  for (const fn of runningEffects) {
-    subs[prop].add(fn)
-  }
+  runningEffects.forEach(fn => subs[prop].add(fn))
   subscribedEffects.set(target, subs)
 }
 
-let nextTick = null
+// handle tracked setter access
 function trigger(target, prop, value) {
   let subs = subscribedEffects.get(target) || {}
   if (!subs[prop]) return
-  // debounce update triggers until next tick
-  clearTimeout(nextTick)
-  nextTick = setTimeout(() => {
-    for (const fn of subs[prop]) {
-      fn()
-    }
+  // Debounce effects until next tick
+  subs[prop].forEach(fn => scheduledEffects.add(fn))
+  setTimeout(() => {
+    // run scheduled effects on the next tick
+    scheduledEffects.forEach(fn => fn())
+    // and clear the set afterwards
+    scheduledEffects.clear()
   }, 0)
 }
 
-// handle object access
+// Handle object access
 const handler = {
   get(target, prop) {
     const value = Reflect.get(...arguments)
@@ -61,12 +68,12 @@ const handler = {
   }
 }
 
-// create reactive proxy object
+// Create reactive proxy object
 export function reactive(value) {
   return new Proxy(value, handler)
 }
 
-
+// create app in style of vue 3 composition api
 export function createApp(opts) {
   const proxy = opts.setup()
   return {
