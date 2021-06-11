@@ -76,7 +76,7 @@ export function reactive(value) {
 // create app and bind proxy to this
 export function createApp(opts) {
   const reactiveState = reactive({})
-  const nonReactiveState = opts.setup.call(proxy)
+  const nonReactiveState = opts.setup.call(reactiveState)
   return {
     mount: (template, context) => {
       createEffect(() => render(template.call(reactiveState, nonReactiveState), context))

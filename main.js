@@ -61,7 +61,6 @@ createApp({
           this.deep.a++
         }}">${Math.round(this.a*this.b/this.deep.a) || 0}</button>
         <button class="button" @click="${foo}">Reset</button>
-
       </div>
     </section>
     `
