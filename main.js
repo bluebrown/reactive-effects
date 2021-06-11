@@ -30,20 +30,26 @@ createApp({
       console.log('watch deep a', this.deep.a)
     })
 
-    const foo = () => {
-      this.a++
-      console.log('foo called')
+
+    createEffect(() => {
+      this.c = Math.round(this.a*this.b/this.deep.a) || 0
+    })
+
+    const reset = () => {
+      this.a = 0
+      this.b = 0
+      this.deep = {a: 0}
     }
 
     return {
-      foo
+      reset
     }
 
   }
   // mount the app which binds the proxy object
   // as this to the template function and creates
   // a render effect
-}).mount(function template({foo}) {
+}).mount(function template({reset}) {
   renderCounter++
   return html`
     <section class="container p-5 has-background-white-ter h-screen">
@@ -59,8 +65,8 @@ createApp({
           this.deep.a++
           this.deep.a++
           this.deep.a++
-        }}">${Math.round(this.a*this.b/this.deep.a) || 0}</button>
-        <button class="button" @click="${foo}">Reset</button>
+        }}">${this.c}</button>
+        <button class="button" @click="${reset}">Reset</button>
       </div>
     </section>
     `
