@@ -73,12 +73,13 @@ export function reactive(value) {
   return new Proxy(value, handler)
 }
 
-// create app in style of vue 3 composition api
+// create app and bind proxy to this
 export function createApp(opts) {
-  const proxy = opts.setup()
+  const reactiveState = reactive({})
+  const nonReactiveState = opts.setup.call(proxy)
   return {
     mount: (template, context) => {
-      createEffect(() => render(template.call(proxy), context))
+      createEffect(() => render(template.call(reactiveState, nonReactiveState), context))
     }
   }
 }
