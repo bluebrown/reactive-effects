@@ -1,73 +1,39 @@
+
 'use strict'
 
-import {createApp, createEffect, html} from './proxy.js'
+import { render, html } from 'https://unpkg.com/lit-html@latest/lit-html.js'
+import { createEffect, toRefs } from './proxy.js'
 
+// some template
+let t = ({ i, a, b }) => html`
+  <h1>Power of ${i}</h1>
+  <button 
+    class="button" 
+    @click="${() => a.value++}">
+    ${a.value}
+  </button>
+  =
+  <code>${b.value}</code>
+`
 
-// track how many times render is actually called
-// for testing purposes
-let renderCounter = 0
+// create some test components in a loop
+for (let i=0; i<10; i++) {
+  // we need a container to render against
+  let container = document.createElement('div')
+  container.classList = 'box has-text-center'
+  document.body.append(container)
 
-// return reactive proxy from this setup function
-createApp({
-  setup() {
+  // reactive references
+  let { a, b } = toRefs({ a: 0, b: 0 })
 
-    // create proxy object
-    this.a = 1
-    this.b = 2
-    this.deep = {a: 3}
-    this.c  = 0
+  // watch effect
+  createEffect(() => console.log(a.value))
 
-    // create some test effects as well
-    createEffect(() => {
-      console.log('watch a', this.a)
-    })
+  // compute effect
+  createEffect(() => {
+    b.value = a.value**i
+  })
 
-    createEffect(() => {
-      console.log('watch b', this.b)
-    })
-
-    createEffect(() => {
-      console.log('watch deep a', this.deep.a)
-    })
-
-
-    createEffect(() => {
-      this.c = Math.round(this.a*this.b/this.deep.a) || 0
-    })
-
-    const reset = () => {
-      this.a = 0
-      this.b = 0
-      this.deep = {a: 0}
-    }
-
-    return {
-      reset
-    }
-
-  }
-  // mount the app which binds the proxy object
-  // as this to the template function and creates
-  // a render effect
-}).mount(function template({reset}) {
-  renderCounter++
-  return html`
-    <section class="container p-5 has-background-white-ter h-screen">
-      <div class="box">
-        <code>Render Count: ${renderCounter}</code>
-        <button class="button" @click="${() => this.a++}">${this.a}</button>
-        <button class="button" @click="${() => this.b++}">${this.b}</button>
-        <button class="button" @click="${() => this.deep.a++}">${this.deep.a}</button>
-        <button class="button" @click="${() => {
-          this.a++
-          this.b++
-          this.b++
-          this.deep.a++
-          this.deep.a++
-          this.deep.a++
-        }}">${this.c}</button>
-        <button class="button" @click="${reset}">Reset</button>
-      </div>
-    </section>
-    `
-}, document.getElementById('app'))
+  // render effect
+  createEffect(() => render(t({ i, a, b }), container))
+}

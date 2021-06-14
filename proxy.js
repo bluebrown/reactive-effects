@@ -1,9 +1,5 @@
 'use strict'
 
-import { render } from 'https://unpkg.com/lit-html@latest/lit-html.js'
-export { html } from 'https://unpkg.com/lit-html@latest/lit-html.js'
-
-
 // Maintain a stack of running effects
 const runningEffects = []
 
@@ -13,7 +9,6 @@ const subscribedEffects = new WeakMap()
 // Maintain a set of effects that should 
 // get run on the next tick
 const scheduledEffects = new Set()
-
 
 // put the effect on the stack while running
 // so that the proxy knows which effect
@@ -73,13 +68,13 @@ export function reactive(value) {
   return new Proxy(value, handler)
 }
 
-// create app and bind proxy to this
-export function createApp(opts) {
-  const reactiveState = reactive({})
-  const nonReactiveState = opts.setup.call(reactiveState)
-  return {
-    mount: (template, context) => {
-      createEffect(() => render(template.call(reactiveState, nonReactiveState), context))
-    }
-  }
+// Create reactive reference
+export function ref(value) {
+  return reactive({ value })
+}
+
+export function toRefs(obj) {
+  return Object.fromEntries(
+    Object.entries(obj).map(([key, val]) => [key, ref(val)])
+  )
 }
