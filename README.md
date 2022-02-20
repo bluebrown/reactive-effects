@@ -3,10 +3,12 @@
 You can view the working examples locally. Start nginx via compose with the below commands and visit the url `http://localhost:8080/` in your browser.
 
 ```bash
-export APP_DIR=options-api  # export one of
-export APP_DIR=composition  # these two
-docker compose up           # then start nginx
+export APP_DIR=define-props     # export one of
+export APP_DIR=reactive-effects # these two
+docker compose up               # then start nginx
 ```
+
+The project is named after the code in reactive-effects/lib.js. This is the implementation of the *Reactive Effects*. In the define-props folder is the initial approach of using define properties. Both are explained in the following blog post.
 
 ## Dismantling Reactivity
 

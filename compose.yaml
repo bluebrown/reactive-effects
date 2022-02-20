@@ -4,4 +4,4 @@ services:
     ports:
       - 8080:8080
     volumes:
-      - "./${APP_DIR:-composition-api}:/usr/share/nginx/html:ro"
+      - "./${APP_DIR:-reactive-effects}:/usr/share/nginx/html:ro"
