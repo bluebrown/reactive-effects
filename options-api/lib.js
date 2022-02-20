@@ -13,7 +13,7 @@ const hookNames = [
 
 export function createApp(app) {
 
-  // create shim object to store react properties and 
+  // create shim object to store react properties and
   // other context data
   const shim = {
     instance: {},
@@ -63,7 +63,9 @@ export function createApp(app) {
   // call this function whe data changes
   function renderApp() {
     if (!mounted || !context) return
-    render(template.call(shim.instance), context)
+    render(template.call(shim.instance), context, {
+      eventContext: shim.instance,
+    })
   };
 
   // no reactive properties yet
@@ -97,7 +99,7 @@ export function createApp(app) {
         get() {
           return _data[key]
         },
-        // re-render the app and trigger hooks/watcher
+        // rerender the app and trigger hooks/watcher
         // is a setter is called
         set(value) {
           const oldVal = _data[key]

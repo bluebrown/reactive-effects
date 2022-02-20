@@ -1,0 +1,7 @@
+services:
+  statics:
+    image: nginxinc/nginx-unprivileged
+    ports:
+      - 8080:8080
+    volumes:
+      - "./${APP_DIR:-composition-api}:/usr/share/nginx/html:ro"
